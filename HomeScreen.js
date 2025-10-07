@@ -1,48 +1,63 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, Button, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 
-const USERNAME_KEY = '@username';
-const PASSWORD_KEY = '@password';
+export default function HomeScreen() {
+  const [items, setItems] = useState([]); // Estado para almacenar los datos
+  const [loading, setLoading] = useState(true); // Estado para manejar la carga
 
-export default function HomeScreen({ navigation }) {
-  const [username, setUsername] = useState('');
-
+  // 🔹 Aquí agregas el useEffect con la petición fetch
   useEffect(() => {
-    const loadUsername = async () => {
+    const fetchItems = async () => {
       try {
-        const savedUsername = await AsyncStorage.getItem(USERNAME_KEY);
-        if (savedUsername !== null) setUsername(savedUsername);
-      } catch (e) {
-        console.log('Error cargando AsyncStorage en Home:', e);
+        const response = await fetch('https://jsonplaceholder.typicode.com/users'); // URL de ejemplo
+        const data = await response.json();
+        setItems(data); // Guardar los datos obtenidos en el estado
+        setLoading(false); // Desactivar el estado de carga
+      } catch (error) {
+        console.error('Error al obtener los datos:', error);
       }
     };
-    loadUsername();
+
+    fetchItems(); // Llamar a la función cuando el componente se monte
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem(USERNAME_KEY);
-      await AsyncStorage.removeItem(PASSWORD_KEY);
-      navigation.replace('Login'); // evita volver con botón atrás
-    } catch (e) {
-      console.log('Error cerrando sesión:', e);
-    }
-  };
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: 'center',
+      padding: 20,
+    },
+    item: {
+      padding: 10,
+      fontSize: 18,
+      height: 44,
+    },
+  });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.inner}>
-        <Text style={styles.title}>¡Bienvenido{username ? `, ${username}` : '!'}</Text>
-        
-        <View style={{ marginTop: 30 }}><Button title="Cerrar sesión" onPress={handleLogout} /></View>
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      {loading ? <Text>Cargando datos...</Text> : (
+        <FlatList
+          data={items}
+          renderItem={({ item }) => <Text style={styles.item}>{item.name}</Text>}
+          keyExtractor={item => item.id.toString()}
+        />
+      )}
+    </View>
   );
 }
 
+
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  inner: { padding: 20, flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: '700', marginBottom: 10, textAlign: 'center' },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
 });
